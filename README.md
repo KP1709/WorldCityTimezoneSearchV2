@@ -2,10 +2,10 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/4f47638c-fd95-4996-8720-f372af650bd6/deploy-status)](https://app.netlify.com/projects/kareenapatel-worldcitytimezonesearch2/deploys)
 
 ## ⌨️ Tech stack
-React / Typescript / pnpm / Luxon / Shadcn / Tailwind CSS / Mapcn / Supabase
+React / Typescript / pnpm / Luxon / Shadcn / Tailwind CSS / Mapcn / Zustand / Supabase 
 
 ## 🍼 Introduction
-For a while I've been exploring Shadcn and Tailwind and discovered open source libraries build using Shadcn. I found Mapcn which uses MapLibre. After having built the first World City Timezone Search app through pure CSS, React-leaflet and designing components from scratch, I found an opportunity to improve the application and create a second version. Most of the features still exist but with minor changes and improvements.
+For a while I've been exploring Shadcn and Tailwind and discovered open source libraries built using Shadcn. I found Mapcn which uses MapLibre. After having built the first World City Timezone Search app through pure CSS, React-leaflet and designing components from scratch, I found an opportunity to improve the application and create a second version. Most of the features still exist but with minor changes and improvements.
 
 ## 🛠️ Features
 - Search for world cities through querying the Supabase database
