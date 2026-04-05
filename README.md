@@ -26,6 +26,7 @@ For a while I've been exploring Shadcn and Tailwind and discovered open source l
 - Shadcn - https://ui.shadcn.com/
 - Mapcn - https://www.mapcn.dev/
 - Tailwind - https://tailwindcss.com/
+- Zustand - https://zustand-demo.pmnd.rs/
 
 ## 🪣 APIs / Data
 - Country flags - https://flagpedia.net/download/api
