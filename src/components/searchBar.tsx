@@ -10,10 +10,11 @@ export function SearchBar() {
     const [query, setQuery] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
     const [isError, setIsError] = useState<string | null>(null);
     const [results, setResults] = useState<CitiesTypeGrouped[]>([]);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const debouncedQuery = useDebounce(query, 200);
 
@@ -23,11 +24,13 @@ export function SearchBar() {
         if (debouncedQuery.length === 0) {
             setResults([]);
             setIsOpen(false);
+            setIsLoading(false);
             return;
         }
 
         const fetchResults = async () => {
             setIsError(null);
+            setIsLoading(true);
 
             const { data, error } = await supabase.rpc('get_search_city', { city_selected: debouncedQuery });
 
@@ -36,6 +39,8 @@ export function SearchBar() {
                     setIsError('Unable to get search results');
                 }
                 setResults([]);
+                setIsLoading(false);
+                return;
             }
             else {
                 setResults(data.map((item: CitiesTypeGrouped) => ({
@@ -44,6 +49,7 @@ export function SearchBar() {
                     'country_name_en': item.country_name_en,
                     'region': item.region,
                 })) || []);
+                setIsLoading(false);
             }
         };
 
@@ -156,6 +162,11 @@ export function SearchBar() {
             {isError && (
                 <Card className="absolute mt-2 w-full h-fit p-2 shadow-lg z-10">
                     <p className="text-red-500">{isError}</p>
+                </Card>
+            )}
+            {isLoading && (
+                <Card className="absolute mt-2 w-full h-fit p-2 shadow-lg z-10">
+                    <p>Loading...</p>
                 </Card>
             )}
             {(isOpen && !isError) && (
