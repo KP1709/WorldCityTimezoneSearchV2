@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Map, MapControls, type MapRef, MapMarker, MarkerContent } from '@/components/ui/map';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
 import { MapPin, MapPinned } from 'lucide-react';
 import { SearchBar } from '@/components/searchBar';
@@ -39,7 +40,15 @@ const MapComponent = () => {
 
             <div className='flex flex-col gap-2 absolute z-1 top-20 right-2 sm:flex-row sm:top-5 sm:right-15'>
                 <DarkModeToggle setMapDarkMode={setMapDarkMode} />
-                {selectedCity && <Button onClick={handleEaseTo}><MapPinned /></Button>}
+                {selectedCity &&
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={handleEaseTo}><MapPinned /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Focus on location</p>
+                        </TooltipContent>
+                    </Tooltip>}
             </div>
 
             <Map ref={mapRef} center={[0, 0]} zoom={currentZoomLevel ?? 2} theme={mapDarkMode ? 'dark' : 'light'} className='border-2 absolute'>

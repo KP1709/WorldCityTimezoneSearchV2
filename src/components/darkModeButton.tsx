@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Moon, Sun } from 'lucide-react';
 
 type DarkModeToggleProps = {
@@ -32,9 +33,16 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({ setMapDarkMode }) => {
     };
 
     return (
-        <Button onClick={toggleDarkMode}>
-            {isDarkMode ? <Sun /> : <Moon />}
-        </Button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button onClick={toggleDarkMode}>
+                    {isDarkMode ? <Sun /> : <Moon />}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Toggle mode</p>
+            </TooltipContent>
+        </Tooltip>
     );
 };
 
