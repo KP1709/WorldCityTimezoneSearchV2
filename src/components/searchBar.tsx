@@ -5,62 +5,42 @@ import { supabase } from "@/hooks/getCityListData";
 import type { CitiesTypeGrouped } from "@/types";
 import useDebounce from "@/hooks/useDebounce";
 import useMapStore from "@/hooks/useMapStore";
+import { useSearchCity } from "@/hooks/useSearchCity";
 
-export function SearchBar() {
+const NO_SEARCH_ITEMS_SHOWN = 5;
+
+const SearchBar = () => {
     const [query, setQuery] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-    const [isError, setIsError] = useState<string | null>(null);
-    const [results, setResults] = useState<CitiesTypeGrouped[]>([]);
+    const [showMoreResults, setShowMoreResults] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const { setSelectedCity, setSelectedCityGrouped, setHasMultipleCities, setHasManyResults, setCityName } = useMapStore();
 
     const debouncedQuery = useDebounce(query, 200);
-
-    const { setSelectedCity, setSelectedCityGrouped, setHasMultipleCities } = useMapStore();
+    const { isError, isLoading, results } = useSearchCity({ debouncedQuery, searchExactCity: false });
 
     useEffect(() => {
-        if (debouncedQuery.length === 0) {
-            setResults([]);
-            setIsOpen(false);
-            setIsLoading(false);
+        if (!query) {
+            setShowMoreResults(false);
             return;
         }
-
-        const fetchResults = async () => {
-            setIsError(null);
-            setIsLoading(true);
-
-            const { data, error } = await supabase.rpc('get_search_city', { city_selected: debouncedQuery });
-
-            if (error) {
-                if (error.message.includes('Failed to fetch')) {
-                    setIsError('Unable to get search results');
-                }
-                setResults([]);
-                setIsLoading(false);
-                return;
-            }
-            else {
-                setResults(data.map((item: CitiesTypeGrouped) => ({
-                    'geoname_id': item.geoname_id,
-                    'ascii_name': item.ascii_name,
-                    'country_name_en': item.country_name_en,
-                    'region': item.region,
-                })) || []);
-                setIsLoading(false);
-            }
-        };
-
-        fetchResults();
-    }, [debouncedQuery]);
+        const testResults = results.filter(data => data.ascii_name.toLowerCase() === query);
+        if (testResults.length > NO_SEARCH_ITEMS_SHOWN) {
+            setShowMoreResults(true);
+            setCityName(query);
+        } else {
+            setShowMoreResults(false);
+        }
+    }, [query, results, setShowMoreResults, setCityName]);
 
     const filteredResults = useMemo(() => {
         if (!query) return [];
-        return results?.filter((result) =>
+        const filtered = results?.filter((result) =>
             result?.ascii_name.toLowerCase().includes(query.toLowerCase())
         );
+        return filtered.slice(0, NO_SEARCH_ITEMS_SHOWN);
     }, [query, results]);
 
     useEffect(() => {
@@ -186,6 +166,14 @@ export function SearchBar() {
                                 </li>
                             );
                         })}
+                        {showMoreResults &&
+                            <li className='cursor-pointer rounded-md px-2 py-1'
+                                onMouseEnter={() => setHighlightedIndex(0)}
+                                onClick={() => setHasManyResults(true)}
+                            >
+                                Show more
+                            </li>
+                        }
                         {results.length > 0 && (
                             <li className="text-xs text-muted-foreground mt-2">
                                 <span>City data provided by <a className='text-sidebar-primary underline' href='https://public.opendatasoft.com/explore/dataset/geonames-all-cities-with-a-population-1000/table/?disjunctive.cou_name_en&sort=name'>OpenDataSoft</a>,</span>
@@ -198,4 +186,6 @@ export function SearchBar() {
             )}
         </div>
     );
-}
+};
+
+export default SearchBar;

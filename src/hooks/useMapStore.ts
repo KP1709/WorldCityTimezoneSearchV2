@@ -20,6 +20,12 @@ interface MapStore {
     timezoneCity: TimeZoneType | null;
     setTimezoneCity: (city: TimeZoneType | null) => void;
 
+    hasManyResults: boolean;
+    setHasManyResults: (value: boolean) => void;
+
+    cityName: string;
+    setCityName: (value: string) => void;
+
 }
 
 const useMapStore = create<MapStore>((set) => ({
@@ -40,6 +46,12 @@ const useMapStore = create<MapStore>((set) => ({
 
     timezoneCity: null,
     setTimezoneCity: (city) => set({ timezoneCity: city }),
+
+    hasManyResults: false,
+    setHasManyResults: (value) => set({ hasManyResults: value }),
+
+    cityName: '',
+    setCityName: (value) => set({ cityName: value })
 
 }));
 

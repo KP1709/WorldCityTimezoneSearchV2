@@ -11,6 +11,8 @@ For a while I've been exploring Shadcn and Tailwind and discovered open source l
 - Search for world cities through querying the Supabase database
   - Handles region selection as some cities exist with same name and country  
     - E.g. Buffalo - United States 
+  - Handles when not all cities are listed in the search all with the same name but are in different countries
+    - E.g. San Jose 
 - Displays city location on map
     - Map is interactive with zoom control for phone and desktop
     - Marker is placed where city is

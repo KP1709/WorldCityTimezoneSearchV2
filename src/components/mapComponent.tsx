@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Map, MapControls, type MapRef, MapMarker, MarkerContent } from '@/components/ui/map';
 import { MapPin } from 'lucide-react';
-import { SearchBar } from '@/components/searchBar';
+import SearchBar from '@/components/searchBar';
 import LocationCard from '@/components/locationCard';
 import useMapStore from '@/hooks/useMapStore';
 import useBreakpoint from '@/hooks/useBreakpoint';
