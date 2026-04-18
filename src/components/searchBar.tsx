@@ -26,8 +26,8 @@ const SearchBar = () => {
             setShowMoreResults(false);
             return;
         }
-        const testResults = results.filter(data => data.ascii_name.toLowerCase() === query);
-        if (testResults.length > NO_SEARCH_ITEMS_SHOWN) {
+        const moreResults = results.filter(data => data.ascii_name.toLowerCase() === query);
+        if (moreResults.length > NO_SEARCH_ITEMS_SHOWN) {
             setShowMoreResults(true);
             setCityName(query);
         } else {
