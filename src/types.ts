@@ -1,5 +1,8 @@
 export type latLngType = [number, number];
 
+export type LngLatObj = { lng: number; lat: number; };
+
+
 export type TimeZoneType = {
     abbreviation: string; //'BST'
     cityName: string;

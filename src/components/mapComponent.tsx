@@ -7,19 +7,63 @@ import useMapStore from '@/hooks/useMapStore';
 import useBreakpoint from '@/hooks/useBreakpoint';
 import DarkModeToggle from '@/components/darkModeButton';
 import FlyToLocationButton from '@/components/flyToLocationButton';
+import type { Map as MapLibreMap, LngLatLike, LngLat, PointLike } from 'maplibre-gl';
+import type { LngLatObj } from '@/types';
 
 const MapComponent = () => {
     const [mapDarkMode, setMapDarkMode] = useState(false);
-    const { selectedCity, currentZoomLevel, setCurrentZoomLevel } = useMapStore();
+    const { selectedCity } = useMapStore();
     const currentBreakpoint = useBreakpoint();
     const lngLat = selectedCity?.coordinates.split(',');
 
     const mapRef = useRef<MapRef>(null);
 
+    const calculateNewLngLat = (offsetX: number, offsetY: number, lngLat: LngLatLike, map: MapLibreMap): LngLatObj => {
+        const ll: LngLat = lngLat as LngLat;
+        const point = map.project([ll.lng, ll.lat]);
+
+        const newPoint = {
+            x: point.x + offsetX,
+            y: point.y + offsetY
+        };
+
+        const newLngLat = map.unproject(newPoint as PointLike);
+
+        return {
+            lng: newLngLat.lng,
+            lat: newLngLat.lat
+        };
+    };
+
     useEffect(() => {
-        if (!mapRef.current) return;
-        setCurrentZoomLevel(mapRef.current?.getZoom());
-    }, [mapRef.current?.getZoom()]);
+        const map = mapRef.current;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (!map) return;
+
+        if (currentBreakpoint <= 800) {
+            offsetX = 0;
+            offsetY = -120;
+        }
+        else if (currentBreakpoint > 800) {
+            offsetX = 100;
+            offsetY = 0;
+        }
+
+        const newLngLat = calculateNewLngLat(
+            offsetX,
+            offsetY,
+            lngLat ? { lng: Number(lngLat[1]), lat: Number(lngLat[0]) } : { lng: 0, lat: 0 },
+            map
+        );
+
+        map?.easeTo({
+            center: [newLngLat.lng, newLngLat.lat],
+            zoom: map.getZoom(),
+            duration: 500
+        });
+    }, []);
 
     const handleEaseTo = () => {
         mapRef.current?.easeTo({
@@ -30,7 +74,7 @@ const MapComponent = () => {
                 left: currentBreakpoint < 700 ? 0 : 200,
                 right: 0
             },
-            zoom: 10,
+            zoom: mapRef.current?.getZoom(),
         });
     };
 
@@ -50,7 +94,6 @@ const MapComponent = () => {
             <Map
                 ref={mapRef}
                 center={[0, 0]}
-                zoom={currentZoomLevel ?? 2}
                 minZoom={2}
                 theme={mapDarkMode ? 'dark' : 'light'}
                 className='border-2 absolute'
