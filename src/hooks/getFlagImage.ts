@@ -10,11 +10,11 @@ export const getFlagImage = (chosenCity: CitiesType, flagCodesList: Record<strin
     let mainFlag = '';
     let secondaryFlag = '';
 
-    if (flagCodesList[mainFlagCode]) {
+    if (mainFlagCode in flagCodesList) {
         mainFlag = `https://flagcdn.com/${FLAGSIZE}/${mainFlagCode}.png`;
     }
 
-    if (flagCodesList[secondaryFlagCode]) {
+    if (secondaryFlagCode in flagCodesList) {
         secondaryFlag = `https://flagcdn.com/${FLAGSIZE}/${secondaryFlagCode}.png`;
     }
 
