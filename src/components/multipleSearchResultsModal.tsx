@@ -2,7 +2,7 @@ import useMapStore from "@/hooks/useMapStore";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useSearchCity } from "@/hooks/useSearchCity";
-import { supabase } from "@/hooks/getCityListData";
+import { getSelectedCity } from "@/hooks/getCityListData";
 import type { CitiesTypeGrouped } from "@/types";
 import { FieldLabel, Field, FieldContent, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -15,28 +15,7 @@ const MultipleSearchResultsModal = () => {
 
     const selectItem = async (item: CitiesTypeGrouped) => {
         if (item.region.length === 1) {
-            const { data, error } = await supabase.rpc('get_selected_city',
-                {
-                    city_selected: item.ascii_name,
-                    region_selected: item.region[0],
-                    country_selected: item.country_name_en
-                });
-
-            if (!error) {
-                setSelectedCity({
-                    'geoname_id': data[0].geonname_id,
-                    'name': data[0].name,
-                    'ascii_name': data[0].ascii_name,
-                    'country_code': data[0].country_code,
-                    'country_name_en': data[0].country_name_en,
-                    'admin1_code': data[0].admin1_code,
-                    'coordinates': data[0].coordinates,
-                    'timezone': data[0].timezone
-                });
-            }
-            else {
-                console.error('Error fetching selected city:', error);
-            }
+            setSelectedCity(await getSelectedCity(item.ascii_name, item.region[0], item.country_name_en));
         }
         else if (item.region.length > 1) {
             setHasMultipleCities(true);
@@ -49,13 +28,14 @@ const MultipleSearchResultsModal = () => {
         }
     };
 
-    const handleResultsSelect = ({ ascii_name, country_name_en, region, geoname_id }: CitiesTypeGrouped) => {
-        selectItem({ ascii_name, country_name_en, region, geoname_id });
+    const handleResultsSelect = (item: CitiesTypeGrouped) => {
+        selectItem(item);
     };
 
     useEffect(() => {
         if (countrySelected === "") return;
-        handleResultsSelect(results.find((item) => item.country_name_en === countrySelected) as CitiesTypeGrouped);
+        const selectedResult = results.find((item) => item.country_name_en === countrySelected);
+        if (selectedResult) handleResultsSelect(selectedResult);
     }, [countrySelected]);
 
     return (

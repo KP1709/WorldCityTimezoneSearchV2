@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/hooks/getCityListData";
+import { getSelectedCity } from "@/hooks/getCityListData";
 import type { CitiesTypeGrouped } from "@/types";
 import useDebounce from "@/hooks/useDebounce";
 import useMapStore from "@/hooks/useMapStore";
@@ -38,7 +38,7 @@ const SearchBar = () => {
     const filteredResults = useMemo(() => {
         if (!query) return [];
         const filtered = results?.filter((result) =>
-            result?.ascii_name.toLowerCase().includes(query.toLowerCase())
+            result?.ascii_name.toLowerCase().startsWith(query.toLowerCase())
         );
         return filtered.slice(0, NO_SEARCH_ITEMS_SHOWN);
     }, [query, results]);
@@ -88,23 +88,7 @@ const SearchBar = () => {
         setIsTyping(false);
 
         if (item.region.length === 1) {
-            const { data, error } = await supabase.rpc('get_selected_city', { city_selected: item.ascii_name, region_selected: item.region[0], country_selected: item.country_name_en });
-
-            if (!error) {
-                setSelectedCity({
-                    'geoname_id': data[0].geonname_id,
-                    'name': data[0].name,
-                    'ascii_name': data[0].ascii_name,
-                    'country_code': data[0].country_code,
-                    'country_name_en': data[0].country_name_en,
-                    'admin1_code': data[0].admin1_code,
-                    'coordinates': data[0].coordinates,
-                    'timezone': data[0].timezone
-                });
-            }
-            else {
-                console.error('Error fetching selected city:', error);
-            }
+            setSelectedCity(await getSelectedCity(item.ascii_name, item.region[0], item.country_name_en));
         }
         else if (item.region.length > 1) {
             setHasMultipleCities(true);

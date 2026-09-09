@@ -3,14 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import RadioButtonCardGroup from "@/components/radioButtonCards";
 import useMapStore from "@/hooks/useMapStore";
-import { supabase } from "@/hooks/getCityListData";
+import { getCitiesByRegion } from "@/hooks/getCityListData";
 import type { CitiesType } from "@/types";
 
 
-const getCitiesByRegion = async (city: string, region: string[], country: string) => {
-    const { data, error } = await supabase.rpc('get_cities_by_region', { city_selected: city, region_selected: region, country_selected: country });
-    return { data, error };
-};
 export function AdditionalLocationsModal() {
     const { hasMultipleCities, setHasMultipleCities, selectedCityGrouped: city } = useMapStore();
     const [citiesData, setCitiesData] = useState<CitiesType[]>([]);
@@ -24,7 +20,7 @@ export function AdditionalLocationsModal() {
                     city.region,
                     city.country_name_en
                 );
-                setCitiesData(result.data);
+                setCitiesData(result);
             } catch (err) {
                 console.error(err);
             }

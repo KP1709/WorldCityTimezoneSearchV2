@@ -3,7 +3,7 @@ import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
 import useMapStore from "@/hooks/useMapStore";
 import { getRegionFullName } from "@/hooks/getFullRegionName";
-import { supabase } from "@/hooks/getCityListData";
+import { getSelectedCity } from "@/hooks/getCityListData";
 import { useFlagCodes } from "@/hooks/useFlagCodes";
 import type { CitiesType } from "@/types";
 
@@ -29,32 +29,14 @@ const RadioButtonCardGroup = ({ citiesData }: { citiesData: CitiesType[]; }) => 
     }, [flagCodes, citiesData]);
 
     useEffect(() => {
-        const fetchCityData = async () => {
-            const { data, error } = await supabase.rpc('get_selected_city', {
-                city_selected: citiesInfo[0]?.ascii_name,
-                region_selected: chosenRegion,
-                country_selected: citiesInfo[0]?.country_name_en
-            });
-
-            if (!error && data.length !== 0) {
-                setSelectedCity({
-                    'geoname_id': data[0].geonname_id,
-                    'name': data[0].name,
-                    'ascii_name': data[0].ascii_name,
-                    'country_code': data[0].country_code,
-                    'country_name_en': data[0].country_name_en,
-                    'admin1_code': data[0].admin1_code,
-                    'coordinates': data[0].coordinates,
-                    'timezone': data[0].timezone
-                });
-            }
-            if (error) {
-                console.error('Error fetching city data:', error);
-                setIsError(true);
-            }
-        };
         if (chosenRegion) {
-            fetchCityData();
+            const city = citiesInfo[0];
+            getSelectedCity(city.ascii_name, chosenRegion, city.country_name_en)
+                .then((selectedCity) => {
+                    setSelectedCity(selectedCity);
+                    setIsError(!selectedCity);
+                })
+                .catch(() => setIsError(true));
         }
 
     }, [chosenRegion]);
