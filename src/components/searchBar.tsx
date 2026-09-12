@@ -6,6 +6,7 @@ import type { CitiesTypeGrouped } from "@/types";
 import useDebounce from "@/hooks/useDebounce";
 import useMapStore from "@/hooks/useMapStore";
 import { useSearchCity } from "@/hooks/useSearchCity";
+import { Search, X } from "lucide-react";
 
 const NO_SEARCH_ITEMS_SHOWN = 5;
 
@@ -82,6 +83,13 @@ const SearchBar = () => {
         setIsTyping(true);
     };
 
+    const clearSearch = () => {
+        setQuery("");
+        setIsTyping(false);
+        setIsOpen(false);
+        setHighlightedIndex(null);
+    };
+
     const selectItem = async (item: CitiesTypeGrouped) => {
         setQuery(item.ascii_name);
         setIsOpen(false);
@@ -113,15 +121,26 @@ const SearchBar = () => {
     }, []);
 
     return (
-        <div ref={containerRef} className="w-60 absolute max-w-sm z-1 sm:w-full top-2 left-1 bg-accent rounded-md">
+        <div ref={containerRef} className="w-60 absolute max-w-sm z-1 sm:w-full top-2 left-1 rounded-md shadow-md">
+            <Search aria-hidden="true" className="text-muted-foreground bg-accent pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2" />
             <Input
-                type="search"
+                type="text"
                 placeholder="Search city..."
                 value={query}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                className="bg-accent border-sidebar-primary"
+                className="bg-accent border-sidebar-primary pl-9 pr-9 dark:bg-accent!"
             />
+            {query && (
+                <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={clearSearch}
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 z-10 -translate-y-1/2 cursor-pointer"
+                >
+                    <X aria-hidden="true" className="size-4" />
+                </button>
+            )}
 
             {isError && (
                 <Card className="absolute mt-2 w-full h-fit p-2 shadow-lg z-10">
