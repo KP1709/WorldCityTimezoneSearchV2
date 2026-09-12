@@ -82,6 +82,50 @@ const MapComponent = () => {
         handleEaseTo();
     }, [selectedCity]);
 
+    useEffect(() => {
+        const updateMapContrast = () => {
+            const map = mapRef.current;
+            if (!map) return;
+
+            map.getStyle().layers?.forEach((layer) => {
+                const isLabel = layer.type === 'symbol' && Boolean(layer.layout?.['text-field']);
+                const isBoundary = layer.type === 'line' && /boundary|admin/i.test(layer.id);
+
+                if (isLabel) {
+                    map.setPaintProperty(layer.id, 'text-color', mapDarkMode ? '#f1f5f9' : '#263238');
+                    map.setPaintProperty(layer.id, 'text-halo-color', mapDarkMode ? '#263238' : '#f8fafc');
+                    map.setPaintProperty(layer.id, 'text-halo-width', 1.2);
+                }
+
+                if (isBoundary) {
+                    map.setPaintProperty(layer.id, 'line-color', mapDarkMode ? '#94a3b8' : '#52656d');
+                    map.setPaintProperty(layer.id, 'line-opacity', mapDarkMode ? 0.65 : 0.8);
+                }
+            });
+        };
+
+        let animationFrameId: number;
+        let map: MapLibreMap | null = null;
+
+        const attachToMap = () => {
+            map = mapRef.current;
+            if (!map) {
+                animationFrameId = requestAnimationFrame(attachToMap);
+                return;
+            }
+
+            if (map.isStyleLoaded()) updateMapContrast();
+            map.on('style.load', updateMapContrast);
+        };
+
+        attachToMap();
+
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+            map?.off('style.load', updateMapContrast);
+        };
+    }, [mapDarkMode]);
+
     return (
         <div className="w-full h-svh relative">
             <SearchBar />
