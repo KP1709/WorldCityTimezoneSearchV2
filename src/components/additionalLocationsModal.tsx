@@ -7,24 +7,20 @@ import { getCitiesByRegion } from "@/hooks/getCityListData";
 import type { CitiesType } from "@/types";
 
 
-export function AdditionalLocationsModal() {
+const AdditionalLocationsModal = () => {
     const { hasMultipleCities, setHasMultipleCities, selectedCityGrouped: city } = useMapStore();
     const [citiesData, setCitiesData] = useState<CitiesType[]>([]);
 
     useEffect(() => {
-        async function loadCities() {
+        const loadCities = async () => {
             if (!city) return;
             try {
-                const result = await getCitiesByRegion(
-                    city.ascii_name,
-                    city.region,
-                    city.country_name_en
-                );
+                const result = await getCitiesByRegion(city.ascii_name, city.region, city.country_name_en);
                 setCitiesData(result);
             } catch (err) {
                 console.error(err);
             }
-        }
+        };
 
         loadCities();
     }, [city]);
@@ -43,4 +39,6 @@ export function AdditionalLocationsModal() {
             </DialogContent>
         </Dialog>
     );
-}
+};
+
+export default AdditionalLocationsModal;

@@ -16,8 +16,10 @@ const MultipleSearchResultsModal = () => {
     const selectItem = async (item: CitiesTypeGrouped) => {
         if (item.region.length === 1) {
             setSelectedCity(await getSelectedCity(item.ascii_name, item.region[0], item.country_name_en));
+            return;
         }
-        else if (item.region.length > 1) {
+
+        if (item.region.length > 1) {
             setHasMultipleCities(true);
             setSelectedCityGrouped({
                 'geoname_id': item.geoname_id,
@@ -28,9 +30,7 @@ const MultipleSearchResultsModal = () => {
         }
     };
 
-    const handleResultsSelect = (item: CitiesTypeGrouped) => {
-        selectItem(item);
-    };
+    const handleResultsSelect = (item: CitiesTypeGrouped) => selectItem(item);
 
     useEffect(() => {
         if (countrySelected === "") return;

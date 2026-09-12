@@ -1,4 +1,4 @@
-import { AdditionalLocationsModal } from "@/components/additionalLocationsModal";
+import AdditionalLocationsModal from "@/components/additionalLocationsModal";
 import MapComponent from "@/components/mapComponent";
 import MultipleSearchResultsModal from "@/components/multipleSearchResultsModal";
 
