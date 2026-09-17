@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
-import useMapStore from "@/hooks/useMapStore";
 import { getRegionFullName } from "@/hooks/getFullRegionName";
-import { getSelectedCity } from "@/hooks/getCityListData";
 import { useFlagCodes } from "@/hooks/useFlagCodes";
 import type { CitiesType } from "@/types";
 
 type citiesInfoType = CitiesType & { regionName: string; };
+type RadioButtonCardGroupProps = {
+    citiesData: CitiesType[];
+    chosenRegion: string;
+    onRegionChange: (region: string) => void;
+};
 
-const RadioButtonCardGroup = ({ citiesData }: { citiesData: CitiesType[]; }) => {
+const RadioButtonCardGroup = ({ citiesData, chosenRegion, onRegionChange }: RadioButtonCardGroupProps) => {
     const flagCodes = useFlagCodes();
     const [citiesInfo, setCitiesInfo] = useState<citiesInfoType[]>([]);
-    const [chosenRegion, setChosenRegion] = useState<string>("");
-    const { setHasMultipleCities, setSelectedCity } = useMapStore();
-    const [isError, setIsError] = useState(false);
 
     useEffect(() => {
         if (!Array.isArray(citiesData) || citiesData.length === 0) {
@@ -28,19 +28,6 @@ const RadioButtonCardGroup = ({ citiesData }: { citiesData: CitiesType[]; }) => 
         setCitiesInfo(updateRegionName);
     }, [flagCodes, citiesData]);
 
-    useEffect(() => {
-        if (chosenRegion) {
-            const city = citiesInfo[0];
-            getSelectedCity(city.ascii_name, chosenRegion, city.country_name_en)
-                .then((selectedCity) => {
-                    setSelectedCity(selectedCity);
-                    setIsError(!selectedCity);
-                })
-                .catch(() => setIsError(true));
-        }
-
-    }, [chosenRegion]);
-
     return (
         <FieldGroup className="w-full">
             <FieldSet>
@@ -51,9 +38,10 @@ const RadioButtonCardGroup = ({ citiesData }: { citiesData: CitiesType[]; }) => 
                 <RadioGroup
                     className='grid sm:grid-cols-2 md:grid-cols-3'
                     defaultValue=""
-                    onValueChange={(val) => { setChosenRegion(val); setHasMultipleCities(false); }}
+                    value={chosenRegion}
+                    onValueChange={onRegionChange}
                 >
-                    {!isError && citiesInfo.map((city) => {
+                    {citiesInfo.map((city) => {
                         return (
                             <FieldLabel className="border-sidebar-primary hover:border-sidebar-primary-foreground cursor-pointer" key={city.geoname_id} htmlFor={city.regionName} >
                                 <Field orientation="horizontal">
@@ -65,11 +53,6 @@ const RadioButtonCardGroup = ({ citiesData }: { citiesData: CitiesType[]; }) => 
                             </FieldLabel>
                         );
                     })}
-                    {isError &&
-                        <p className="text-destructive">
-                            An error occurred while fetching city regions. Please try again later.
-                        </p>
-                    }
                 </RadioGroup>
             </FieldSet>
         </FieldGroup>

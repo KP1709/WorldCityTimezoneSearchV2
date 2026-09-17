@@ -1,12 +1,13 @@
 import useMapStore from "@/hooks/useMapStore";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useSearchCity } from "@/hooks/useSearchCity";
 import { getSelectedCity } from "@/hooks/getCityListData";
 import type { CitiesTypeGrouped } from "@/types";
 import { FieldLabel, Field, FieldContent, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const MultipleSearchResultsModal = () => {
     const { hasManyResults, setHasManyResults, cityName, setSelectedCity, setHasMultipleCities, setSelectedCityGrouped } = useMapStore();
@@ -30,16 +31,14 @@ const MultipleSearchResultsModal = () => {
         }
     };
 
-    const handleResultsSelect = (item: CitiesTypeGrouped) => selectItem(item);
-
-    useEffect(() => {
+    const handleResultsSelect = () => {
         if (countrySelected === "") return;
         const selectedResult = results.find((item) => item.country_name_en === countrySelected);
-        if (selectedResult) handleResultsSelect(selectedResult);
-    }, [countrySelected]);
+        if (selectedResult) selectItem(selectedResult);
+    };
 
     return (
-        <Dialog open={hasManyResults} onOpenChange={() => setHasManyResults(false)}>
+        <Dialog open={hasManyResults} onOpenChange={(open) => { if (!open) setHasManyResults(false); }}>
             <DialogContent className="border-sidebar-primary">
                 <DialogHeader>
                     <DialogTitle>Multiple cities found</DialogTitle>
@@ -50,7 +49,7 @@ const MultipleSearchResultsModal = () => {
                     <RadioGroup
                         className='grid sm:grid-cols-2 md:grid-cols-3'
                         defaultValue=""
-                        onValueChange={(value) => { setCountrySelected(value); setHasManyResults(false); }}
+                        onValueChange={(value) => { setCountrySelected(value); }}
                     >
                         {results.map(({ country_name_en, geoname_id }) => {
                             return (
@@ -66,6 +65,7 @@ const MultipleSearchResultsModal = () => {
                         })}
                     </RadioGroup>
                 </ScrollArea>
+                <Button onClick={() => { handleResultsSelect(); setHasManyResults(false); }} disabled={!countrySelected}>Submit</Button>
             </DialogContent>
         </Dialog>
     );
