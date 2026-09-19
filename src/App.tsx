@@ -1,6 +1,6 @@
-import AdditionalLocationsModal from "@/components/additionalLocationsModal";
-import MapComponent from "@/components/mapComponent";
-import MultipleSearchResultsModal from "@/components/multipleSearchResultsModal";
+import AdditionalLocationsModal from "@/components/modals/additionalLocationsModal";
+import MapComponent from "@/components/map/mapComponent";
+import MultipleSearchResultsModal from "@/components/modals/multipleSearchResultsModal";
 
 function App() {
   return (

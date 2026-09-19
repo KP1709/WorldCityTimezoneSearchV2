@@ -11,8 +11,7 @@ const TimeDate: React.FC<TimeDateProps> = ({ timezone, time = true }) => {
     const [timeDate, setTimeDate] = useState<DateTime>(DateTime.now());
 
     useEffect(() => {
-        const updateTimezone = async () => timezone ? setCalculatedTimezone(timezone) : setCalculatedTimezone(undefined);
-        updateTimezone();
+        (() => timezone ? setCalculatedTimezone(timezone) : setCalculatedTimezone(undefined))();
     }, [timezone]);
 
     useEffect(() => {

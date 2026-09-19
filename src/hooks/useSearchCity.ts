@@ -1,13 +1,15 @@
-import { searchCities } from "@/hooks/getCityListData";
+import { searchCities } from "@/lib/getCityListData";
 import { useEffect, useState } from "react";
 
-type SearchCityType = {
+type UseSearchCityOptions = {
     debouncedQuery: string;
     searchExactCity: boolean;
 };
 
-export const useSearchCity = ({ debouncedQuery, searchExactCity }: SearchCityType) => {
-    const [results, setResults] = useState<Awaited<ReturnType<typeof searchCities>>>([]);
+type SearchResults = Awaited<ReturnType<typeof searchCities>>;
+
+export const useSearchCity = ({ debouncedQuery, searchExactCity }: UseSearchCityOptions) => {
+    const [results, setResults] = useState<SearchResults>([]);
     const [isError, setIsError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -15,32 +17,40 @@ export const useSearchCity = ({ debouncedQuery, searchExactCity }: SearchCityTyp
         let isCurrent = true;
 
         if (debouncedQuery.length === 0) {
-            setResults([]);
-            setIsError(null);
-            setIsLoading(false);
             return () => { isCurrent = false; };
         }
 
-        setIsLoading(true);
-        searchCities(debouncedQuery, searchExactCity)
-            .then((nextResults) => {
+        const loadResults = async () => {
+            setIsLoading(true);
+
+            try {
+                const nextResults = await searchCities(debouncedQuery, searchExactCity);
                 if (!isCurrent) return;
+
                 setResults(nextResults);
                 setIsError(null);
-            })
-            .catch(() => {
+            } catch {
                 if (!isCurrent) return;
+
                 setResults([]);
                 setIsError("Unable to get search results");
-            })
-            .finally(() => {
+            } finally {
                 if (isCurrent) setIsLoading(false);
-            });
+            }
+        };
+
+        loadResults();
 
         return () => { isCurrent = false; };
     }, [debouncedQuery, searchExactCity]);
 
-    return { isError, isLoading, debouncedQuery, results };
+    const hasQuery = debouncedQuery.length > 0;
+
+    return {
+        isError: hasQuery ? isError : null,
+        isLoading: hasQuery && isLoading,
+        results: hasQuery ? results : [],
+    };
 };
 
 

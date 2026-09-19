@@ -1,99 +1,62 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { getSelectedCity } from "@/hooks/getCityListData";
+import { getSelectedCity } from "@/lib/getCityListData";
 import type { CitiesTypeGrouped } from "@/types";
 import useDebounce from "@/hooks/useDebounce";
 import useMapStore from "@/hooks/useMapStore";
 import { useSearchCity } from "@/hooks/useSearchCity";
+import { useSearchResultsList } from "@/hooks/useSearchResultsList";
 import { Search, X } from "lucide-react";
 
 const NO_SEARCH_ITEMS_SHOWN = 5;
 
 const SearchBar = () => {
     const [query, setQuery] = useState("");
-    const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-    const [isOpen, setIsOpen] = useState(false);
-    const [isTyping, setIsTyping] = useState(false);
-    const [showMoreResults, setShowMoreResults] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const { setSelectedCity, setSelectedCityGrouped, setHasMultipleCities, setHasManyResults, setCityName } = useMapStore();
 
     const debouncedQuery = useDebounce(query, 200);
     const { isError, isLoading, results } = useSearchCity({ debouncedQuery, searchExactCity: false });
+    const {
+        filteredResults,
+        hasMoreResults,
+        highlightedIndex,
+        isOpen,
+        setIsUserTyping,
+        setHighlightedIndex,
+        setIsOpen,
+        handleKeyDown,
+        reset,
+    } = useSearchResultsList({ query, items: results, maxVisibleItems: NO_SEARCH_ITEMS_SHOWN });
 
     useEffect(() => {
-        if (!query) {
-            setShowMoreResults(false);
-            return;
-        }
-        const moreResults = results.filter(data => data.ascii_name.toLowerCase() === query.toLowerCase());
-        if (moreResults.length > NO_SEARCH_ITEMS_SHOWN) {
-            setShowMoreResults(true);
-            setCityName(query);
-        } else {
-            setShowMoreResults(false);
-        }
-    }, [query, results, setShowMoreResults, setCityName]);
+        if (hasMoreResults) setCityName(query);
+    }, [hasMoreResults, query, setCityName]);
 
-    const filteredResults = useMemo(() => {
-        if (!query) return [];
-        const filtered = results?.filter((result) =>
-            result?.ascii_name.toLowerCase().startsWith(query.toLowerCase())
-        );
-        return filtered.slice(0, NO_SEARCH_ITEMS_SHOWN);
-    }, [query, results]);
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        const selectedResult = handleKeyDown(e);
 
-    useEffect(() => {
-        if (!isTyping) return;
-        setHighlightedIndex(0);
-        setIsOpen(filteredResults.length > 0);
-    }, [query, filteredResults, isTyping]);
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (!isOpen) return;
-
-        if (e.key === "ArrowDown") {
+        if (selectedResult) {
             e.preventDefault();
-            setHighlightedIndex((prev) =>
-                prev === null || prev === filteredResults.length - 1 ? 0 : prev + 1
-            );
-        }
-
-        if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setHighlightedIndex((prev) =>
-                prev === null || prev === 0 ? filteredResults.length - 1 : prev - 1
-            );
-        }
-
-        if (e.key === "Enter" && highlightedIndex !== null && filteredResults.length > 0) {
-            e.preventDefault();
-            selectItem(filteredResults[highlightedIndex]);
-            setIsOpen(false);
-        }
-
-        if (e.key === "Escape") {
-            setIsOpen(false);
+            void selectItem(selectedResult);
         }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setQuery(e.target.value);
-        setIsTyping(true);
+        setIsUserTyping(true);
     };
 
     const clearSearch = () => {
         setQuery("");
-        setIsTyping(false);
-        setIsOpen(false);
-        setHighlightedIndex(null);
+        reset();
     };
 
     const selectItem = async (item: CitiesTypeGrouped) => {
         setQuery(item.ascii_name);
         setIsOpen(false);
-        setIsTyping(false);
+        setIsUserTyping(false);
 
         if (item.region.length === 1) {
             setSelectedCity(await getSelectedCity(item.ascii_name, item.region[0], item.country_name_en));
@@ -101,10 +64,10 @@ const SearchBar = () => {
         else if (item.region.length > 1) {
             setHasMultipleCities(true);
             setSelectedCityGrouped({
-                'geoname_id': item.geoname_id,
-                'ascii_name': item.ascii_name,
-                'country_name_en': item.country_name_en,
-                'region': item.region
+                geoname_id: item.geoname_id,
+                ascii_name: item.ascii_name,
+                country_name_en: item.country_name_en,
+                region: item.region,
             });
         }
     };
@@ -118,7 +81,7 @@ const SearchBar = () => {
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [setIsOpen]);
 
     return (
         <div ref={containerRef} className="w-60 absolute max-w-sm z-1 sm:w-full top-2 left-1 rounded-md shadow-md">
@@ -128,7 +91,7 @@ const SearchBar = () => {
                 placeholder="Search city..."
                 value={query}
                 onChange={handleChange}
-                onKeyDown={handleKeyDown}
+                onKeyDown={handleInputKeyDown}
                 className="bg-accent border-sidebar-primary pl-9 pr-9 dark:bg-accent!"
             />
             {query && (
@@ -162,21 +125,22 @@ const SearchBar = () => {
                                     key={city.geoname_id}
                                     className={`cursor-pointer rounded-md px-2 py-1 ${index === highlightedIndex ? "bg-muted" : "hover:bg-muted"}`}
                                     onMouseEnter={() => setHighlightedIndex(index)}
-                                    onClick={() => selectItem(city)}
+                                    onClick={() => void selectItem(city)}
                                 >
-                                    {city.ascii_name} - {''}
+                                    {city.ascii_name} - {""}
                                     {city.country_name_en}
                                 </li>
                             );
                         })}
-                        {showMoreResults &&
-                            <li className='cursor-pointer rounded-md px-2 py-1'
+                        {hasMoreResults && (
+                            <li
+                                className="cursor-pointer rounded-md px-2 py-1"
                                 onMouseEnter={() => setHighlightedIndex(0)}
                                 onClick={() => setHasManyResults(true)}
                             >
                                 Show more
                             </li>
-                        }
+                        )}
                         {results.length > 0 && (
                             <li className="text-xs text-muted-foreground mt-2">
                                 <span>City data provided by <a className='text-sidebar-primary underline' href='https://public.opendatasoft.com/explore/dataset/geonames-all-cities-with-a-population-1000/table/?disjunctive.cou_name_en&sort=name'>OpenDataSoft</a>,</span>

@@ -1,73 +1,60 @@
 import { useEffect, useState, useRef } from 'react';
 import { Map, MapControls, type MapRef, MapMarker, MarkerContent } from '@/components/ui/map';
 import { MapPin } from 'lucide-react';
-import SearchBar from '@/components/searchBar';
-import LocationCard from '@/components/locationCard';
+import SearchBar from '@/components/map/searchBar';
+import LocationCard from '@/components/locationCard/locationCard';
 import useMapStore from '@/hooks/useMapStore';
 import useBreakpoint from '@/hooks/useBreakpoint';
-import DarkModeToggle from '@/components/darkModeButton';
-import FlyToLocationButton from '@/components/flyToLocationButton';
-import type { Map as MapLibreMap, LngLatLike, LngLat, PointLike } from 'maplibre-gl';
+import DarkModeToggle from '@/components/map/darkModeButton';
+import FlyToLocationButton from '@/components/map/flyToLocationButton';
+import type { Map as MapLibreMap, LngLatLike, PointLike } from 'maplibre-gl';
 import type { LngLatObj } from '@/types';
+
+type PixelOffset = { x: number; y: number; };
+
+const getMapOffset = (breakpoint: number) => {
+    if (breakpoint <= 800) return { x: 0, y: -120 };
+    return { x: 100, y: 0 };
+};
+
+const calculateOffsetCenter = (location: LngLatLike, offset: PixelOffset, map: MapLibreMap): LngLatObj => {
+    const point = map.project(location);
+    const offsetPoint = {
+        x: point.x + offset.x,
+        y: point.y + offset.y,
+    };
+    const newCenter = map.unproject(offsetPoint as PointLike);
+
+    return { lng: newCenter.lng, lat: newCenter.lat };
+};
 
 const MapComponent = () => {
     const [mapDarkMode, setMapDarkMode] = useState(false);
     const { selectedCity } = useMapStore();
     const currentBreakpoint = useBreakpoint();
-    const lngLat = selectedCity?.coordinates.split(',');
+    const [latitude, longitude] = selectedCity?.coordinates.split(',').map(Number) ?? [];
 
     const mapRef = useRef<MapRef>(null);
 
-    const calculateNewLngLat = (offsetX: number, offsetY: number, lngLat: LngLatLike, map: MapLibreMap): LngLatObj => {
-        const ll: LngLat = lngLat as LngLat;
-        const point = map.project([ll.lng, ll.lat]);
-
-        const newPoint = {
-            x: point.x + offsetX,
-            y: point.y + offsetY
-        };
-
-        const newLngLat = map.unproject(newPoint as PointLike);
-
-        return {
-            lng: newLngLat.lng,
-            lat: newLngLat.lat
-        };
-    };
-
     useEffect(() => {
         const map = mapRef.current;
-        let offsetX = 0;
-        let offsetY = 0;
-
         if (!map) return;
 
-        if (currentBreakpoint <= 800) {
-            offsetX = 0;
-            offsetY = -120;
-        }
-        else if (currentBreakpoint > 800) {
-            offsetX = 100;
-            offsetY = 0;
-        }
-
-        const newLngLat = calculateNewLngLat(
-            offsetX,
-            offsetY,
-            lngLat ? { lng: Number(lngLat[1]), lat: Number(lngLat[0]) } : { lng: 0, lat: 0 },
-            map
-        );
+        const offset = getMapOffset(currentBreakpoint);
+        const newCenter = calculateOffsetCenter({ lng: 0, lat: 0 }, offset, map);
 
         map?.easeTo({
-            center: [newLngLat.lng, newLngLat.lat],
+            center: [newCenter.lng, newCenter.lat],
             zoom: map.getZoom(),
             duration: 500
         });
-    }, []);
+    }, [currentBreakpoint]);
 
     const handleEaseTo = () => {
+        if (latitude === undefined || longitude === undefined) return;
+
         mapRef.current?.easeTo({
-            center: [Number(lngLat?.[1]), Number(lngLat?.[0])],
+            center: [longitude, latitude],
             padding: {
                 top: 0,
                 bottom: currentBreakpoint < 700 ? 300 : 0,
@@ -80,13 +67,10 @@ const MapComponent = () => {
 
     useEffect(() => {
         handleEaseTo();
-    }, [selectedCity]);
+    }, [currentBreakpoint, latitude, longitude]);
 
     useEffect(() => {
-        const updateMapContrast = () => {
-            const map = mapRef.current;
-            if (!map) return;
-
+        const updateMapContrast = (map: MapLibreMap) => {
             map.getStyle().layers?.forEach((layer) => {
                 const isLabel = layer.type === 'symbol' && Boolean(layer.layout?.['text-field']);
                 const isBoundary = layer.type === 'line' && /boundary|admin/i.test(layer.id);
@@ -104,7 +88,7 @@ const MapComponent = () => {
             });
         };
 
-        let animationFrameId: number;
+        let animationFrameId: number | null = null;
         let map: MapLibreMap | null = null;
 
         const attachToMap = () => {
@@ -114,15 +98,19 @@ const MapComponent = () => {
                 return;
             }
 
-            if (map.isStyleLoaded()) updateMapContrast();
-            map.on('style.load', updateMapContrast);
+            const handleStyleLoad = () => updateMapContrast(map!);
+            map.on('style.load', handleStyleLoad);
+            if (map.isStyleLoaded()) updateMapContrast(map);
+
+            cleanup = () => map?.off('style.load', handleStyleLoad);
         };
 
+        let cleanup = () => { };
         attachToMap();
 
         return () => {
-            cancelAnimationFrame(animationFrameId);
-            map?.off('style.load', updateMapContrast);
+            if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+            cleanup();
         };
     }, [mapDarkMode]);
 
@@ -144,11 +132,11 @@ const MapComponent = () => {
             >
                 <MapControls position='top-right' />
 
-                {selectedCity &&
+                {selectedCity && latitude !== undefined && longitude !== undefined &&
                     <MapMarker
-                        key={selectedCity?.geoname_id}
-                        latitude={Number(lngLat?.[0])}
-                        longitude={Number(lngLat?.[1])}
+                        key={selectedCity.geoname_id}
+                        latitude={latitude}
+                        longitude={longitude}
                     >
                         <MarkerContent>
                             <MapPin
@@ -156,7 +144,8 @@ const MapComponent = () => {
                                 size={40}
                             />
                         </MarkerContent>
-                    </MapMarker>}
+                    </MapMarker>
+                }
             </Map>
 
             {selectedCity && <LocationCard />}

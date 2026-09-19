@@ -1,4 +1,4 @@
-export function getRegionFullName(codesList: Record<string, string>, regionCode: string, selectedCountry: string, alternativeWord = false) {
+export const getRegionFullName = (codesList: Record<string, string>, regionCode: string, selectedCountry: string, alternativeWord = false) => {
     if (selectedCountry === 'United States') {
         if (regionCode === 'DC' && alternativeWord) {
             return 'D.C (Washington)';
@@ -14,4 +14,4 @@ export function getRegionFullName(codesList: Record<string, string>, regionCode:
 
     return regionCode;
 
-}
+};

@@ -3,11 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useSearchCity } from "@/hooks/useSearchCity";
-import { getSelectedCity } from "@/hooks/getCityListData";
+import { getSelectedCity } from "@/lib/getCityListData";
 import type { CitiesTypeGrouped } from "@/types";
-import { FieldLabel, Field, FieldContent, FieldTitle } from "@/components/ui/field";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState } from "react";
+import RadioButtonCardGroup from "@/components/modals/radioButtonCards";
 
 const MultipleSearchResultsModal = () => {
     const { hasManyResults, setHasManyResults, cityName, setSelectedCity, setHasMultipleCities, setSelectedCityGrouped } = useMapStore();
@@ -23,10 +22,10 @@ const MultipleSearchResultsModal = () => {
         if (item.region.length > 1) {
             setHasMultipleCities(true);
             setSelectedCityGrouped({
-                'geoname_id': item.geoname_id,
-                'ascii_name': item.ascii_name,
-                'country_name_en': item.country_name_en,
-                'region': item.region
+                geoname_id: item.geoname_id,
+                ascii_name: item.ascii_name,
+                country_name_en: item.country_name_en,
+                region: item.region
             });
         }
     };
@@ -37,6 +36,12 @@ const MultipleSearchResultsModal = () => {
         if (selectedResult) selectItem(selectedResult);
     };
 
+    const options = results.map((item) => ({
+        id: `${item.geoname_id}-${item.country_name_en}`,
+        value: item.country_name_en,
+        label: item.country_name_en,
+    }));
+
     return (
         <Dialog open={hasManyResults} onOpenChange={(open) => { if (!open) setHasManyResults(false); }}>
             <DialogContent className="border-sidebar-primary">
@@ -46,24 +51,13 @@ const MultipleSearchResultsModal = () => {
                 <DialogDescription>Select a country</DialogDescription>
                 <ScrollArea className="h-fit max-h-[50vh] overflow-y-auto p-1.5">
                     <ScrollBar orientation="vertical" className="bg-sidebar-primary" />
-                    <RadioGroup
-                        className='grid sm:grid-cols-2 md:grid-cols-3'
-                        defaultValue=""
-                        onValueChange={(value) => { setCountrySelected(value); }}
-                    >
-                        {results.map(({ country_name_en, geoname_id }) => {
-                            return (
-                                <FieldLabel className="border-sidebar-primary hover:border-sidebar-primary-foreground cursor-pointer" key={geoname_id} htmlFor={country_name_en} >
-                                    <Field orientation="horizontal">
-                                        <FieldContent>
-                                            <FieldTitle>{country_name_en}</FieldTitle>
-                                        </FieldContent>
-                                        <RadioGroupItem className='cursor-pointer border-sidebar-primary' value={country_name_en} id={country_name_en} />
-                                    </Field>
-                                </FieldLabel>
-                            );
-                        })}
-                    </RadioGroup>
+                    <RadioButtonCardGroup
+                        options={options}
+                        selectedValue={countrySelected}
+                        onValueChange={setCountrySelected}
+                        legend="Country"
+                        description="Select a country"
+                    />
                 </ScrollArea>
                 <Button onClick={() => { handleResultsSelect(); setHasManyResults(false); }} disabled={!countrySelected}>Submit</Button>
             </DialogContent>
